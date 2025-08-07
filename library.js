@@ -1,3 +1,41 @@
+builder.add('inputs','switch', class extends builder.InputClass {
+
+    _init(){
+
+        // Execute Parent Init
+        super._init();
+
+        // Set Additional Properties
+        this._properties.autocomplete = 'off';
+    }
+
+    _input(){
+
+        const input = $(document.createElement('div')).addClass('form-control form-check form-switch');
+        input.switch = $(document.createElement('input')).attr({
+            'id': this._component.id + '-input',
+            'class': 'form-check-input',
+            'name': this._properties.name,
+            'autocomplete': this._properties.autocomplete,
+            'type': 'checkbox',
+            'role': 'switch',
+            // 'style': 'height: 24px;',
+        }).appendTo(input);
+
+        // Return Input
+        return input;
+    }
+
+    val(value = null){
+        if(value !== null){
+            this._component.input.switch.attr('checked', function(index, attr){ return value});
+            this._component.input.switch.attr('value',value);
+        }
+
+        return this._component.input.switch.prop('checked');
+    }
+});
+
 builder.add('components','accordion', class extends builder.ComponentClass {
 
     _init(){
@@ -483,7 +521,7 @@ builder.add('components','card', class extends builder.ComponentClass {
         this._component.header.title = $(document.createElement('span')).appendTo(this._component.header.heading);
 
         // Create Card Header Tools
-        this._component.tools = $(document.createElement('span')).addClass('ms-auto d-flex align-items-center').appendTo(this._component.header.heading);
+        this._component.tools = $(document.createElement('span')).addClass('card-controls ms-auto d-flex align-items-center').appendTo(this._component.header.heading);
         this._component.tools.collapse = $(document.createElement('a')).addClass('ms-3 text-decoration-none cursor-pointer').appendTo(this._component.tools);
         this._component.tools.collapse.icon = $(document.createElement('i')).addClass('bi-chevron-bar-contract').appendTo(this._component.tools.collapse);
         this._component.tools.fullscreen = $(document.createElement('a')).addClass('ms-3 text-decoration-none cursor-pointer').appendTo(this._component.tools);
@@ -1599,6 +1637,8 @@ builder.add('components','list', class extends builder.ComponentClass {
 
 builder.add('components','modal', class extends builder.ComponentClass {
 
+    _ownedBackdrop = null;
+
     _init(){
         this._properties = {
             class: {
@@ -1614,18 +1654,21 @@ builder.add('components','modal', class extends builder.ComponentClass {
                 cancel: null,
                 fullscreen: null,
                 close: null,
+                load: null,
                 onShow: null,
                 onShown: null,
                 onHide: null,
                 onHidden: null,
             },
+            color: null,
             onEnter: true,
             close:true,
             fullscreen:true,
-            destroy:false,
+            destroy:true,
             icon:null,
             title: null,
             body: null,
+            footer: true,
             static: false,
             cancel: true,
             submit: true,
@@ -1658,11 +1701,15 @@ builder.add('components','modal', class extends builder.ComponentClass {
         const self = this;
 
         // Create Component
-        this._component = $(document.createElement('div')).attr({
-            'id': 'modal' + this._id,
-            'class': 'modal fade',
-            'tabindex': -1,
-        }).appendTo('body');
+        this._component = $(document.createElement('div'))
+            .attr({
+                'id': 'modal' + this._id,
+                'class': 'modal fade',
+                'tabindex': -1,
+            })
+            .toggleClass('opacity-0',typeof self._properties.callback.load === 'function')
+            .toggleClass('modal-'+self._properties.color,self._properties.color !== null)
+            .appendTo('body');
         this._component.id = this._component.attr('id');
 
         // Create Dialog
@@ -1694,14 +1741,25 @@ builder.add('components','modal', class extends builder.ComponentClass {
         this._component.body = this._component.dialog.content.body;
 
         // Create Footer
-        this._component.dialog.content.footer = $(document.createElement('div')).addClass('modal-footer p-0').appendTo(this._component.dialog.content);
+        this._component.dialog.content.footer = $(document.createElement('div')).addClass('modal-footer').appendTo(this._component.dialog.content);
         this._component.footer = this._component.dialog.content.footer;
 
-        // Create Submit Button
-        this._component.dialog.content.footer.submit = $(document.createElement('button')).attr('type','button').css({'border-top-left-radius': 'none','border-top-right-radius': 'none','border-bottom-left-radius': 'var(--bs-modal-inner-border-radius)!important'}).addClass('btn btn-lg btn-link fs-6 text-decoration-none col py-3 m-0 rounded-0 border-end').text('Save changes').appendTo(this._component.dialog.content.footer);
-
         // Create Cancel Button
-        this._component.dialog.content.footer.cancel = $(document.createElement('button')).attr('type','button').css({'border-top-left-radius': 'none','border-top-right-radius': 'none','border-bottom-right-radius': 'var(--bs-modal-inner-border-radius)!important'}).addClass('btn btn-lg btn-link fs-6 text-decoration-none col py-3 m-0 rounded-0').attr('data-bs-dismiss','modal').text('Cancel').appendTo(this._component.dialog.content.footer);
+        this._component.dialog.content.footer.cancel = $(document.createElement('button'))
+            .attr('type','button')
+            .addClass('btn btn-lg btn-gray-200')
+            .attr('data-bs-dismiss','modal')
+            .text(this._builder.Locale.get('Cancel'))
+            .appendTo(this._component.dialog.content.footer);
+
+        // Create Submit Button
+        this._component.dialog.content.footer.submit = $(document.createElement('button'))
+            .attr('type','button')
+            .addClass('btn btn-lg')
+            .toggleClass('btn-'+self._properties.color,self._properties.color !== null)
+            .toggleClass('btn-link',self._properties.color === null)
+            .text(this._builder.Locale.get('Submit'))
+            .appendTo(this._component.dialog.content.footer);
 
         // Set Size
         if(this._properties.size != null && typeof this._properties.size === 'string'){
@@ -1834,33 +1892,62 @@ builder.add('components','modal', class extends builder.ComponentClass {
             this._component.dialog.content.footer.submit.remove();
         }
 
-        // Callback Function on Show
-        if(typeof this._properties.callback.onShow === 'function'){
-            this._component.on('show.bs.modal',function(){
-                self._properties.callback.onShow(self._component,self);
-            });
-        }
+        this._component.on('shown.bs.modal', function () {
+            // Prefer Bootstrap's internal handle when available (private API)
+            const el = self._bootstrap._backdrop?._element || document.querySelector('body > .modal-backdrop:last-of-type');
 
-        // Callback Function on Show
-        if(typeof this._properties.callback.onShown === 'function'){
-            this._component.on('shown.bs.modal',function(){
+            if (el) {
+                el.classList.add('hide');
+                if(typeof self._properties.color === 'string'){
+                    el.classList.add('text-' + self._properties.color);
+                } else {
+                    el.classList.add('text-primary');
+                }
+                el.dataset.owner = self._component.id;
+                self._ownedBackdrop = el;
+            }
+
+            // Check for Load Callback (promise supported)
+            if(typeof self._properties.callback.load === 'function'){
+                self.spinner(true);
+                let ret = self._properties.callback.load(self._component,self);
+                if(ret instanceof Promise){
+                    ret.then(function(){
+                        self.spinner(false);
+                    }).catch(function(){
+                        self.spinner(false);
+                    });
+                } else {
+                    self.spinner(false);
+                }
+            }
+
+            // Callback Function on Shown
+            if(typeof self._properties.callback.onShown === 'function'){
                 self._properties.callback.onShown(self._component,self);
-            });
-        }
+            }
+        });
 
-        // Callback Function on Hide
-        if(typeof this._properties.callback.onHide === 'function'){
-            this._component.on('hide.bs.modal',function(){
-                self._properties.callback.onHide(self._component,self);
-            });
-        }
+        // Callback Function on Show
+        this._component.on('show.bs.modal',function(){
+            if(typeof self._properties.callback.onShow === 'function'){
+                self._properties.callback.onShow(self._component,self);
+            }
+        });
 
-        // Callback Function on Hide
-        if(typeof this._properties.callback.onHidden === 'function'){
-            this._component.on('hidden.bs.modal',function(){
+        // Callback Function on Hidden
+        this._component.on('hidden.bs.modal',function(){
+            if(typeof self._properties.callback.onHidden === 'function'){
                 self._properties.callback.onHidden(self._component,self);
-            });
-        }
+            }
+        });
+
+        // Callback Function on Hide
+        this._component.on('hide.bs.modal',function(){
+            if(typeof self._properties.callback.onHide === 'function'){
+                self._properties.callback.onHide(self._component,self);
+            }
+        });
 
         // Callback Function on Close
         if(typeof this._properties.callback.close === 'function'){
@@ -1938,8 +2025,7 @@ builder.add('components','modal', class extends builder.ComponentClass {
 
         // Create Action Button
         let action = $(document.createElement('button')).attr({
-            'class': 'btn btn-lg btn-link fs-6 text-decoration-none col py-3 m-0 rounded-0 border-end',
-            'style': 'border-top-left-radius: 0px !important; border-top-right-radius: 0px !important',
+            'class': 'btn btn-lg btn-link',
             'type': 'button',
         }).prependTo(this._component.dialog.content.footer);
         action.icon = $(document.createElement('i')).addClass('me-1 bi bi-' + properties.icon).prependTo(action);
@@ -1961,11 +2047,6 @@ builder.add('components','modal', class extends builder.ComponentClass {
             action.removeClass('btn-link').addClass('btn-' + properties.color);
         }
 
-        // Set Border Radius
-        this._component.dialog.content.footer.find('button').removeClass('rounded-start rounded-end');
-        this._component.dialog.content.footer.find('button').first().addClass('rounded-start');
-        this._component.dialog.content.footer.find('button').last().addClass('rounded-end').removeClass('border-end');
-
         // Execute Callback
         if(typeof callback === 'function'){
             callback(action,self._component,self);
@@ -1975,8 +2056,16 @@ builder.add('components','modal', class extends builder.ComponentClass {
         return action;
     }
 
-    bootstrap(){
-        return this._bootstrap;
+    spinner(state = true){
+
+        // Set Self
+        const self = this;
+
+        // Add or Remove Show on the modal
+        this._component.removeClass('opacity-0').toggleClass('show', !state);
+
+        // Add or Remove Spinner Overlay
+        this._ownedBackdrop?.classList.toggle('hide', !state);
     }
 
     show(){

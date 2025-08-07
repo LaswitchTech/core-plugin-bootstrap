@@ -1,0 +1,87 @@
+// Inputs
+.form-control.form-check.form-switch {
+    margin: 0;
+    padding-left: var(--bs-spacer-3);
+    padding-right: var(--bs-spacer-3);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    background-color: var(--bs-tertiary-bg);
+
+    .form-check-input {
+        flex-grow: 1;
+        margin: 0;
+    }
+}
+
+// Modals
+.modal {
+    .modal-dialog {
+        .modal-content {
+            .modal-footer {
+
+                &:empty {
+                    display: none;
+                    border: 0;
+                }
+
+                &:has(button) {
+                    padding: 0;
+
+                    button {
+                        text-decoration: none;
+                        margin: 0;
+                        border: none;
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                        border-bottom-left-radius: var(--bs-modal-inner-border-radius);
+                        border-bottom-right-radius: var(--bs-modal-inner-border-radius);
+                        flex: 1 0 0;
+
+                        &:not(:last-child) {
+                            border-bottom-right-radius: 0;
+                        }
+
+                        &:not(:first-child) {
+                            border-bottom-left-radius: 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+.modal-backdrop {
+    --bs-backdrop-opacity: 1 !important;
+    --bs-text-opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.5) !important;
+    color: var(--bs-primary);
+
+    &::before {
+        --bs-spinner-width: 2rem;
+        --bs-spinner-height: 2rem;
+        --bs-spinner-vertical-align: -0.125em;
+        --bs-spinner-border-width: 0.25em;
+        --bs-spinner-animation-speed: 0.75s;
+        --bs-spinner-animation-name: spinner-border;
+
+        content: '';
+        width: 10rem;
+        height: 10rem;
+        border: var(--bs-spinner-border-width) solid currentcolor;
+        border-right-color: rgba(0, 0, 0, 0);
+        border-radius: 50%;
+        animation: var(--bs-spinner-animation-speed) linear infinite var(--bs-spinner-animation-name);
+    }
+
+    &.hide {
+        &::before {
+            display: none;
+        }
+    }
+}
