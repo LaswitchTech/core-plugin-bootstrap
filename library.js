@@ -1918,6 +1918,13 @@ builder.add('components','modal', class extends builder.ComponentClass {
                 }
                 el.dataset.owner = self._component.id;
                 self._ownedBackdrop = el;
+
+                // Add support for stacked modals
+                const zIndex = window.getComputedStyle(el).zIndex;
+                if (zIndex !== 'auto') {
+                    self._component.css('zIndex', (parseInt(zIndex) + (10 * $('.modal.show').length)));
+                    $(self._ownedBackdrop).css('zIndex', (parseInt(zIndex) + (10 * $('.modal.show').length)) - 5);
+                }
             }
 
             // Check for Load Callback (promise supported)
