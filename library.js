@@ -2086,6 +2086,16 @@ builder.add('components','modal', class extends builder.ComponentClass {
 
         // Add or Remove Spinner Overlay
         this._ownedBackdrop?.classList.toggle('hide', !state);
+
+        // Check State
+        if(!state){
+
+            // Enable Tooltips
+            document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                .forEach(tooltip => {
+                    new bootstrap.Tooltip(tooltip)
+                });
+        }
     }
 
     show(){
