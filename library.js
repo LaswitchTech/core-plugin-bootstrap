@@ -1463,6 +1463,7 @@ builder.add('components','list', class extends builder.ComponentClass {
         // Configure Options
         let properties = {
             icon: null,
+            tooltip: null,
             class: null,
             field: null,
             click: null,
@@ -1506,6 +1507,17 @@ builder.add('components','list', class extends builder.ComponentClass {
 
         // Save Options
         item.properties = properties;
+
+        // Set Tooltip
+        if(properties.tooltip){
+            item.attr({
+                'data-bs-toggle': 'tooltip',
+                'data-bs-placement': 'left',
+                'data-bs-title': properties.tooltip,
+                'title': properties.tooltip,
+            });
+            new bootstrap.Tooltip(item);
+        }
 
         // Add Item Row
         item.container = $(document.createElement('div')).addClass('d-flex align-items-center').appendTo(item);
@@ -1893,6 +1905,7 @@ builder.add('components','modal', class extends builder.ComponentClass {
         }
 
         this._component.on('shown.bs.modal', function () {
+
             // Prefer Bootstrap's internal handle when available (private API)
             const el = self._bootstrap._backdrop?._element || document.querySelector('body > .modal-backdrop:last-of-type');
 
