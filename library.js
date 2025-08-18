@@ -2385,8 +2385,9 @@ builder.add('components','progress', class extends builder.ComponentClass {
 
 builder.add('components','tabs', class extends builder.ComponentClass {
 
-    #navbar = null;
-    #content = null;
+    _navbar = null;
+    _navbarMobile = null;
+    _content = null;
     #tabs = {};
     #id = null;
 
@@ -2435,27 +2436,37 @@ builder.add('components','tabs', class extends builder.ComponentClass {
             self.#id = component.id;
 
             // Set Card Class
-            component.header.title.addClass('d-flex justify-content-start align-items-center');
+            component.header.title.addClass('card-nav w-100 d-flex justify-content-start align-items-center');
 
             // Create Tabs Nav
-            self.#navbar = $(document.createElement('div')).addClass('nav').attr('role','tablist').appendTo(component.header.title);
+            self._navbar = $(document.createElement('div')).addClass('nav d-none d-lg-flex').attr('role','tablist').appendTo(component.header.title);
+
+            // Create Mobile Tabs Nav
+            self._navbarMobile = $(document.createElement('div')).addClass('btn-group w-100 d-flex d-lg-none').attr('role','tablist').appendTo(component.header.title);
+            self._navbarMobile.current = $(document.createElement('button')).attr({
+                'type': 'button',
+                'class': 'btn btn-primary dropdown-toggle',
+                'data-bs-toggle': 'dropdown',
+                'aria-expanded': 'false',
+            }).appendTo(self._navbarMobile);
+            self._navbarMobile.menu = $(document.createElement('ul')).addClass('dropdown-menu').appendTo(self._navbarMobile);
 
             // If a card title is set, add margin to the left of the tabs
             if(self._properties.title){
-                self.#navbar.addClass('ms-2');
+                self._navbar.addClass('ms-2');
             }
 
             // Set Tabs Nav Class
             if(self._properties.class.navbar){
-                self.#navbar.addClass(self._properties.class.navbar);
+                self._navbar.addClass(self._properties.class.navbar);
             }
 
             // Create Tabs Content
-            self.#content = $(document.createElement('div')).addClass('tab-content').appendTo(component.body);
+            self._content = $(document.createElement('div')).addClass('tab-content').appendTo(component.body);
 
             // Set Tabs Content Class
             if(self._properties.class.content){
-                self.#content.addClass(self._properties.class.content);
+                self._content.addClass(self._properties.class.content);
             }
         });
     }
@@ -2534,20 +2545,50 @@ builder.add('components','tabs', class extends builder.ComponentClass {
             'type': 'button',
             'role': 'tab',
             'data-bs-toggle': 'tab',
+            'data-name': name,
             'aria-selected': false,
             'data-bs-target': '#' + this.#id + 'tab' + tab.id,
             'aria-controls': this.#id + 'tab' + tab.id,
-        }).appendTo(this.#navbar);
+        }).appendTo(this._navbar);
         tab.nav.icon = $(document.createElement('i')).addClass('me-1 bi bi-' + properties.icon).appendTo(tab.nav);
         tab.nav.label = $(document.createElement('span')).addClass('text-capitalize').appendTo(tab.nav);
+
+        // Create Mobile Tab Nav
+        tab.navMobile = $(document.createElement('li')).appendTo(this._navbarMobile.menu);
+        tab.navMobile.btn = $(document.createElement('button')).attr({
+            'id': this.#id + 'nav' + tab.id,
+            'class': 'dropdown-item',
+            'type': 'button',
+            'role': 'tab',
+            'data-bs-toggle': 'tab',
+            'data-name': name,
+            'aria-selected': false,
+            'data-bs-target': '#' + this.#id + 'tab' + tab.id,
+            'aria-controls': this.#id + 'tab' + tab.id,
+        }).appendTo(tab.navMobile);
+        tab.navMobile.icon = $(document.createElement('i')).addClass('me-2 bi bi-' + properties.icon).appendTo(tab.navMobile.btn);
+        tab.navMobile.label = $(document.createElement('span')).addClass('text-capitalize').appendTo(tab.navMobile.btn);
+
+        // Tab Nav Click Event
+        tab.nav.click(function(){
+            self._navbarMobile.current.html($(this).html());
+        });
+
+        // Mobile Tab Nav Click Event
+        tab.navMobile.btn.click(function(){
+            self._navbarMobile.current.html($(this).html());
+            self._navbar.find('button').removeClass('active').attr('aria-selected',false);
+            tab.nav.addClass('active').attr('aria-selected',true);
+        });
 
         // Create Tab Content
         tab.tab = $(document.createElement('div')).attr({
             'id': this.#id + 'tab' + tab.id,
             'class': 'tab-pane fade',
             'role': 'tabpanel',
+            'data-name': name,
             'aria-labelledby': this.#id + 'nav' + tab.id,
-        }).appendTo(this.#content);
+        }).appendTo(this._content);
 
         // Set Tab Nav Class
         if(properties.class.nav){
@@ -2567,8 +2608,10 @@ builder.add('components','tabs', class extends builder.ComponentClass {
         // Set Tab Nav Label
         if(properties.label){
             tab.nav.label.text(properties.label);
+            tab.navMobile.label.text(properties.label);
         } else {
             tab.nav.label.text(name);
+            tab.navMobile.label.text(name);
         }
 
         // Execute Callback
@@ -2588,7 +2631,9 @@ builder.add('components','tabs', class extends builder.ComponentClass {
             tab.tab.addClass('show active');
 
             // Set First Nav as Active
-            tab.nav.addClass('active');
+            tab.nav.addClass('active').attr('aria-selected',true);
+            tab.navMobile.btn.addClass('active').attr('aria-selected',true);
+            self._navbarMobile.current.html(tab.nav.html());
         }
 
         // Save Tab
