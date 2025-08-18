@@ -17,6 +17,13 @@
 }
 
 // Modals
+body:has(.modal),
+body:has(.modal-backdrop){
+    [role="tooltip"],
+    .tooltip {
+        z-index: 5000!important;
+    }
+}
 .modal {
     .modal-dialog {
         .modal-content {
